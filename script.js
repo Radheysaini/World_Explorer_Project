@@ -1,5 +1,6 @@
 const API_URL =
   "https://countries.dev/countries?fields=name,flags,flag,population,capital,region,area,borders,currencies,languages,alpha3Code";
+const COUNTRIES_PER_LOAD = 20;
 
 const countryContainer = document.getElementById("countryContainer");
 const countryCount = document.getElementById("countryCount");
@@ -12,8 +13,11 @@ const retryBtn = document.getElementById("retryBtn");
 const searchInput = document.getElementById("searchInput");
 const regionFilter = document.getElementById("regionFilter");
 const sortSelect = document.getElementById("sortSelect");
+const loadMoreBtn = document.getElementById("loadMoreBtn");
 
 let allCountries = [];
+let currentFilteredCountries = [];
+let visibleCount = COUNTRIES_PER_LOAD;
 let currentRequestId = 0;
 let debounceTimer = null;
 
@@ -23,6 +27,7 @@ async function fetchCountries() {
     loading.hidden = false;
     error.hidden = true;
     empty.hidden = true;
+    loadMoreBtn.hidden = true;
     countryContainer.innerHTML = "";
     countryCount.textContent = "Loading...";
     refreshBtn.disabled = true;
@@ -86,11 +91,21 @@ function createCountryCard(country) {
   return card;
 }
 
-function renderCountries(list) {
+function renderCountries() {
   countryContainer.innerHTML = "";
-  countryCount.textContent = `${list.length} Countries`;
-  empty.hidden = list.length !== 0;
-  list.forEach((country) => countryContainer.appendChild(createCountryCard(country)));
+  const total = currentFilteredCountries.length;
+  const countriesToShow = currentFilteredCountries.slice(0, visibleCount);
+  countryCount.textContent = `Showing ${countriesToShow.length} of ${total} Countries`;
+  empty.hidden = total !== 0;
+
+  countriesToShow.forEach((c) => countryContainer.appendChild(createCountryCard(c)));
+
+  if (visibleCount < total) {
+    loadMoreBtn.hidden = false;
+    loadMoreBtn.textContent = `Load Next ${Math.min(COUNTRIES_PER_LOAD, total - visibleCount)} Countries`;
+  } else {
+    loadMoreBtn.hidden = true;
+  }
 }
 
 function applyFilters() {
@@ -108,7 +123,9 @@ function applyFilters() {
   else if (sortValue === "population") filtered.sort((a, b) => (b.population || 0) - (a.population || 0));
   else if (sortValue === "area") filtered.sort((a, b) => (b.area || 0) - (a.area || 0));
 
-  renderCountries(filtered);
+  currentFilteredCountries = filtered;
+  visibleCount = COUNTRIES_PER_LOAD;
+  renderCountries();
 }
 
 refreshBtn.addEventListener("click", fetchCountries);
@@ -119,5 +136,9 @@ searchInput.addEventListener("input", () => {
 });
 regionFilter.addEventListener("change", applyFilters);
 sortSelect.addEventListener("change", applyFilters);
+loadMoreBtn.addEventListener("click", () => {
+  visibleCount += COUNTRIES_PER_LOAD;
+  renderCountries();
+});
 
 fetchCountries();
