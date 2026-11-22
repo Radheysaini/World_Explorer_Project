@@ -3,6 +3,7 @@ const API_URL =
 
 const COUNTRIES_PER_LOAD = 20;
 const FAVORITES_KEY = "world_explorer_favorites";
+const THEME_KEY = "world_explorer_theme";
 
 // DOM ELEMENTS
 const exploreView = document.getElementById("exploreView");
@@ -24,6 +25,7 @@ const empty = document.getElementById("empty");
 
 const refreshBtn = document.getElementById("refreshBtn");
 const retryBtn = document.getElementById("retryBtn");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
 
 const logoLink = document.getElementById("logoLink");
 const exploreLink = document.getElementById("exploreLink");
@@ -46,6 +48,24 @@ let visibleCount = COUNTRIES_PER_LOAD;
 let favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY)) || [];
 let currentRequestId = 0;
 let debounceTimer = null;
+
+// DARK MODE / LIGHT MODE (LOCAL STORAGE)
+function loadTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme === "dark") {
+    document.documentElement.classList.add("dark");
+    themeToggleBtn.textContent = "☀️ Light";
+  } else {
+    document.documentElement.classList.remove("dark");
+    themeToggleBtn.textContent = "🌙 Dark";
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+  themeToggleBtn.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+}
 
 // FAVORITES (LOCAL STORAGE)
 function updateFavCount() {
@@ -439,9 +459,11 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") detailModal.hidden = true;
 });
 
+themeToggleBtn.addEventListener("click", toggleTheme);
 refreshBtn.addEventListener("click", fetchCountries);
 retryBtn.addEventListener("click", fetchCountries);
 
 // INITIALIZE APP
+loadTheme();
 updateFavCount();
 fetchCountries();

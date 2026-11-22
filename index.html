@@ -7,6 +7,45 @@
     <title>World Explorer</title>
     <link rel="stylesheet" href="./dist/output.css" />
     <script src="./script.js" defer></script>
+    <!-- for dark mode -->
+    <style>
+      html.dark body {
+        background-color: #0f172a;
+        color: #f1f5f9;
+      }
+      html.dark header,
+      html.dark footer,
+      html.dark #explore,
+      html.dark #empty,
+      html.dark #favoritesSection,
+      html.dark #modalBox,
+      html.dark article {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #f1f5f9 !important;
+      }
+      html.dark h1,
+      html.dark h2,
+      html.dark h3,
+      html.dark label {
+        color: #f8fafc !important;
+      }
+      html.dark p,
+      html.dark td,
+      html.dark th {
+        color: #cbd5e1 !important;
+      }
+      html.dark input,
+      html.dark select {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+      }
+      html.dark .border-chip {
+        background-color: #334155 !important;
+        color: #93c5fd !important;
+      }
+    </style>
   </head>
 
   <body class="bg-slate-50 text-slate-800 min-h-screen transition-colors duration-200">
@@ -24,6 +63,11 @@
             <span id="favCount">0</span>
             )
           </a>
+          <button
+            id="themeToggleBtn"
+            class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200">
+            🌙 Dark
+          </button>
         </div>
       </nav>
     </header>
