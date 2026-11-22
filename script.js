@@ -1,12 +1,16 @@
-// WORLD EXPLORER - COMMIT 7 (DETAIL MODAL)
-
 const API_URL =
   "https://countries.dev/countries?fields=name,flags,flag,population,capital,region,area,borders,currencies,languages,alpha3Code";
 
 const COUNTRIES_PER_LOAD = 20;
+const FAVORITES_KEY = "world_explorer_favorites";
 
 // DOM ELEMENTS
+const exploreView = document.getElementById("exploreView");
+const favoritesSection = document.getElementById("favoritesSection");
 const countryContainer = document.getElementById("countryContainer");
+const favoritesContainer = document.getElementById("favoritesContainer");
+const noFavoritesMsg = document.getElementById("noFavoritesMsg");
+
 const searchInput = document.getElementById("searchInput");
 const regionFilter = document.getElementById("regionFilter");
 const sortSelect = document.getElementById("sortSelect");
@@ -21,16 +25,47 @@ const empty = document.getElementById("empty");
 const refreshBtn = document.getElementById("refreshBtn");
 const retryBtn = document.getElementById("retryBtn");
 
+const logoLink = document.getElementById("logoLink");
+const exploreLink = document.getElementById("exploreLink");
+const favoritesLink = document.getElementById("favoritesLink");
+const backToExploreBtn = document.getElementById("backToExploreBtn");
+const favCount = document.getElementById("favCount");
+
 const detailModal = document.getElementById("detailModal");
 const modalContent = document.getElementById("modalContent");
 const closeModalBtn = document.getElementById("closeModalBtn");
+
+const compareSelect1 = document.getElementById("compareSelect1");
+const compareSelect2 = document.getElementById("compareSelect2");
+const compareResult = document.getElementById("compareResult");
 
 // APPLICATION STATE
 let allCountries = [];
 let currentFilteredCountries = [];
 let visibleCount = COUNTRIES_PER_LOAD;
+let favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY)) || [];
 let currentRequestId = 0;
 let debounceTimer = null;
+
+// FAVORITES (LOCAL STORAGE)
+function updateFavCount() {
+  favCount.textContent = favorites.length;
+}
+
+function toggleFavorite(code) {
+  if (favorites.includes(code)) {
+    favorites = favorites.filter((item) => item !== code);
+  } else {
+    favorites.push(code);
+  }
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+  updateFavCount();
+
+  renderCountries();
+  if (!favoritesSection.hidden) {
+    renderFavoritesView();
+  }
+}
 
 // FETCH COUNTRIES FROM API (ASYNC/AWAIT)
 async function fetchCountries() {
@@ -107,11 +142,22 @@ function applyFilters() {
 
 // CREATE CARD & RENDER (20 AT A TIME)
 function createCountryCard(country) {
+  const isFav = favorites.includes(country.alpha3Code);
+
   const card = document.createElement("article");
-  card.dataset.code = country.alpha3Code; // Used by Event Delegation
+  card.dataset.code = country.alpha3Code;
   card.className =
     "country-card relative cursor-pointer group bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300";
 
+  // FAVORITE BUTTON
+  const favBtn = document.createElement("button");
+  favBtn.dataset.code = country.alpha3Code;
+  favBtn.className =
+    "fav-btn absolute top-3 right-3 z-10 bg-white/90 px-2.5 py-1.5 rounded-full shadow text-sm hover:scale-110 transition";
+  favBtn.textContent = isFav ? "❤️" : "🤍";
+  favBtn.title = "Save to Favorites";
+
+  // FLAG IMAGE
   const imageWrapper = document.createElement("div");
   imageWrapper.className = "h-44 bg-slate-100 overflow-hidden flex items-center justify-center";
 
@@ -137,6 +183,7 @@ function createCountryCard(country) {
     imageWrapper.classList.add("text-6xl");
   }
 
+  // CARD CONTENT
   const info = document.createElement("div");
   info.className = "p-5";
 
@@ -161,7 +208,7 @@ function createCountryCard(country) {
   area.textContent = `Area: ${(country.area || 0).toLocaleString("en-IN")} km²`;
 
   info.append(name, capital, population, region, area);
-  card.append(imageWrapper, info);
+  card.append(favBtn, imageWrapper, info);
   return card;
 }
 
@@ -247,13 +294,101 @@ function openCountryDetail(code) {
   detailModal.hidden = false;
 }
 
+// FAVORITES & COMPARE VIEW
+function renderFavoritesView() {
+  const favCountries = allCountries.filter((c) => favorites.includes(c.alpha3Code));
+  favoritesContainer.innerHTML = "";
+
+  noFavoritesMsg.hidden = favCountries.length !== 0;
+
+  favCountries.forEach((country) => {
+    favoritesContainer.appendChild(createCountryCard(country));
+  });
+
+  if (favCountries.length < 2) {
+    compareSelect1.innerHTML = "<option>Save at least 2 favorites</option>";
+    compareSelect2.innerHTML = "<option>Save at least 2 favorites</option>";
+    compareResult.innerHTML =
+      '<p class="text-sm text-slate-500">Save at least 2 countries to compare them side by side.</p>';
+    return;
+  }
+
+  const options = favCountries.map((c) => `<option value="${c.alpha3Code}">${c.name}</option>`).join("");
+  compareSelect1.innerHTML = options;
+  compareSelect2.innerHTML = options;
+  compareSelect2.selectedIndex = 1;
+
+  renderComparison();
+}
+
+function renderComparison() {
+  const c1 = allCountries.find((c) => c.alpha3Code === compareSelect1.value);
+  const c2 = allCountries.find((c) => c.alpha3Code === compareSelect2.value);
+  if (!c1 || !c2) return;
+
+  compareResult.innerHTML = `
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-200">
+            <th class="py-2 pr-4">Metric</th>
+            <th class="py-2 px-4">${c1.name}</th>
+            <th class="py-2 px-4">${c2.name}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+          <tr>
+            <td class="py-2 font-semibold">Capital</td>
+            <td class="py-2 px-4">${c1.capital || "N/A"}</td>
+            <td class="py-2 px-4">${c2.capital || "N/A"}</td>
+          </tr>
+          <tr>
+            <td class="py-2 font-semibold">Region</td>
+            <td class="py-2 px-4">${c1.region || "N/A"}</td>
+            <td class="py-2 px-4">${c2.region || "N/A"}</td>
+          </tr>
+          <tr>
+            <td class="py-2 font-semibold">Population</td>
+            <td class="py-2 px-4">${(c1.population || 0).toLocaleString("en-IN")}</td>
+            <td class="py-2 px-4">${(c2.population || 0).toLocaleString("en-IN")}</td>
+          </tr>
+          <tr>
+            <td class="py-2 font-semibold">Area</td>
+            <td class="py-2 px-4">${(c1.area || 0).toLocaleString("en-IN")} km²</td>
+            <td class="py-2 px-4">${(c2.area || 0).toLocaleString("en-IN")} km²</td>
+          </tr>
+          <tr>
+            <td class="py-2 font-semibold">Currencies</td>
+            <td class="py-2 px-4">${formatCurrencies(c1.currencies)}</td>
+            <td class="py-2 px-4">${formatCurrencies(c2.currencies)}</td>
+          </tr>
+          <tr>
+            <td class="py-2 font-semibold">Languages</td>
+            <td class="py-2 px-4">${formatLanguages(c1.languages)}</td>
+            <td class="py-2 px-4">${formatLanguages(c2.languages)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 // EVENT LISTENERS & EVENT DELEGATION
-countryContainer.addEventListener("click", (e) => {
+function handleCardGridClick(e) {
+  const favBtn = e.target.closest(".fav-btn");
+  if (favBtn) {
+    toggleFavorite(favBtn.dataset.code);
+    return;
+  }
+
   const card = e.target.closest(".country-card");
   if (card) {
     openCountryDetail(card.dataset.code);
   }
-});
+}
+
+countryContainer.addEventListener("click", handleCardGridClick);
+favoritesContainer.addEventListener("click", handleCardGridClick);
 
 modalContent.addEventListener("click", (e) => {
   const chip = e.target.closest(".border-chip");
@@ -275,6 +410,27 @@ loadMoreBtn.addEventListener("click", () => {
   renderCountries();
 });
 
+// View Switching (Explore <-> Favorites)
+favoritesLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  exploreView.hidden = true;
+  favoritesSection.hidden = false;
+  renderFavoritesView();
+});
+
+function showExploreView(e) {
+  if (e) e.preventDefault();
+  favoritesSection.hidden = true;
+  exploreView.hidden = false;
+}
+
+exploreLink.addEventListener("click", showExploreView);
+logoLink.addEventListener("click", showExploreView);
+backToExploreBtn.addEventListener("click", showExploreView);
+
+compareSelect1.addEventListener("change", renderComparison);
+compareSelect2.addEventListener("change", renderComparison);
+
 closeModalBtn.addEventListener("click", () => (detailModal.hidden = true));
 detailModal.addEventListener("click", (e) => {
   if (e.target === detailModal) detailModal.hidden = true;
@@ -287,4 +443,5 @@ refreshBtn.addEventListener("click", fetchCountries);
 retryBtn.addEventListener("click", fetchCountries);
 
 // INITIALIZE APP
+updateFavCount();
 fetchCountries();

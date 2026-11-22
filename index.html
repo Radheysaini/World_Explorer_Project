@@ -14,8 +14,16 @@
     <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
       <nav class="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
         <a href="#" id="logoLink" class="text-xl font-bold text-blue-700">🌍 World Explorer</a>
+
+        <!-- Navigation Links -->
         <div class="flex items-center gap-4 sm:gap-6">
           <a href="#explore" id="exploreLink" class="font-semibold text-blue-600 hover:text-blue-800">Explore</a>
+
+          <a href="#" id="favoritesLink" class="font-semibold text-slate-600 hover:text-blue-600">
+            Favorites (
+            <span id="favCount">0</span>
+            )
+          </a>
         </div>
       </nav>
     </header>
@@ -124,6 +132,36 @@
           </div>
         </section>
       </div>
+
+      <!-- FAVORITES & COMPARE VIEW -->
+      <section id="favoritesSection" hidden class="bg-white p-6 rounded-2xl border border-slate-200 mb-12">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-slate-900">❤️ Saved Favorites</h2>
+          <button
+            id="backToExploreBtn"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+            ← Back to Explore
+          </button>
+        </div>
+
+        <p id="noFavoritesMsg" hidden class="text-center py-8 text-slate-500 text-sm">
+          No favorite countries yet. Click the 🤍 button on any country card to save it!
+        </p>
+
+        <div
+          id="favoritesContainer"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-10"></div>
+
+        <!-- COMPARE 2 FAVORITES -->
+        <div class="border-t border-slate-200 pt-6">
+          <h3 class="text-xl font-bold text-slate-900 mb-4">⚖️ Compare 2 Favorite Countries</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <select id="compareSelect1" class="px-4 py-2 text-sm border border-slate-200 rounded-lg bg-white"></select>
+            <select id="compareSelect2" class="px-4 py-2 text-sm border border-slate-200 rounded-lg bg-white"></select>
+          </div>
+          <div id="compareResult"></div>
+        </div>
+      </section>
     </main>
 
     <!-- COUNTRY DETAIL MODAL -->
