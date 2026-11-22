@@ -9,9 +9,13 @@ const errorMessage = document.getElementById("errorMessage");
 const empty = document.getElementById("empty");
 const refreshBtn = document.getElementById("refreshBtn");
 const retryBtn = document.getElementById("retryBtn");
+const searchInput = document.getElementById("searchInput");
+const regionFilter = document.getElementById("regionFilter");
+const sortSelect = document.getElementById("sortSelect");
 
 let allCountries = [];
 let currentRequestId = 0;
+let debounceTimer = null;
 
 async function fetchCountries() {
   const requestId = ++currentRequestId;
@@ -31,7 +35,7 @@ async function fetchCountries() {
     if (requestId !== currentRequestId) return;
 
     allCountries = data;
-    renderCountries(allCountries);
+    applyFilters();
   } catch (err) {
     if (requestId !== currentRequestId) return;
     errorMessage.textContent =
@@ -89,6 +93,31 @@ function renderCountries(list) {
   list.forEach((country) => countryContainer.appendChild(createCountryCard(country)));
 }
 
+function applyFilters() {
+  let filtered = [...allCountries];
+  const searchValue = searchInput.value.trim().toLowerCase();
+  if (searchValue) {
+    filtered = filtered.filter((c) => c.name.toLowerCase().includes(searchValue));
+  }
+  const selectedRegion = regionFilter.value;
+  if (selectedRegion !== "all") {
+    filtered = filtered.filter((c) => c.region === selectedRegion);
+  }
+  const sortValue = sortSelect.value;
+  if (sortValue === "name") filtered.sort((a, b) => a.name.localeCompare(b.name));
+  else if (sortValue === "population") filtered.sort((a, b) => (b.population || 0) - (a.population || 0));
+  else if (sortValue === "area") filtered.sort((a, b) => (b.area || 0) - (a.area || 0));
+
+  renderCountries(filtered);
+}
+
 refreshBtn.addEventListener("click", fetchCountries);
 retryBtn.addEventListener("click", fetchCountries);
+searchInput.addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(applyFilters, 300);
+});
+regionFilter.addEventListener("change", applyFilters);
+sortSelect.addEventListener("change", applyFilters);
+
 fetchCountries();
